@@ -9,6 +9,12 @@ Read the tuiWidgetS3SWFUpload class to see the available options. By default,
 files are uploaded to your bucket in an "uploads/" folder, and are private.
 There is no restriction on file type, and a 2Gb file size restriction.
 
+Disclaimer
+----------
+
+This plugin is unmaintained and unsupported. It was written in haste, and may
+not work for you. It worked for us when we needed it, and you may find it
+useful, but we make no guarantees.
 
 Installation
 ------------
