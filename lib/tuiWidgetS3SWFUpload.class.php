@@ -4,21 +4,6 @@ sfContext::getInstance()->getConfiguration()->loadHelpers('Asset');
 class tuiWidgetS3SWFUpload extends sfWidgetForm
 {
   
-  public function __construct(array $options = array(), array $attributes = array())
-  {
-    // Set defaults
-    $options = array_merge(
-      array(
-        // 'needs_multipart' => true,
-      ),
-      $options
-    );
-    
-    
-    parent::__construct($options, $attributes);
-  }
-  
-  
   public function getJavascripts()
   {
     return array(
@@ -27,14 +12,6 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
       'http://cachedcommons.org/cache/jquery-swfupload/1.0.0/javascripts/jquery-swfupload-min.js',
     );
   }
-  
-  // public function getStylesheets()
-  // {
-  //   return array(
-  //     '/tuiWidgetImageLibraryPlugin/css/image_picker.css' => 'screen',
-  //     '/tuiWidgetImageLibraryPlugin/css/colours_grey.css' => 'screen',
-  //   );
-  // }
   
   
   public function configure($options = array(), $attributes = array())
@@ -45,7 +22,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
     
     $this->addOption('acl', 'private');
     $this->addOption('key', 'uploads/${filename}');
-    $this->addOption('button_image', '/tuiS3SWFUploadPlugin/images/XPButtonUploadText_61x22.png');
+    $this->addOption('button_image', image_path('/tuiS3SWFUploadPlugin/images/XPButtonUploadText_61x22.png'));
     $this->addOption('size_limit', '2 GB');
     $this->addOption('file_types', '*.*');
     $this->addOption('file_types_description', 'All files');
@@ -77,7 +54,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
           button_height: {button_height},
 
           // Flash Settings
-          flash_url: "/tuiS3SWFUploadPlugin/swf/swfupload.swf",
+          flash_url: "'.image_path('/tuiS3SWFUploadPlugin/swf/swfupload.swf').'",
           debug: {debug},
           post_params: {
             "AWSAccessKeyId": {aws_accesskey},
@@ -93,36 +70,38 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
 
 
     
+    $this->addOption('events.js', '
+      .bind("fileQueued", function(event, file){
+        $(this).swfupload("startUpload");
+      })
+      .bind("fileQueueError", function(event, file, errorCode, message){
+        alert("File queue error:\n"+message);
+      })
+      .bind("uploadProgress", function(event, file, bytesLoaded){
+        $(".progress", this).text((Math.floor((bytesLoaded / file.size) * 1000) / 10 )+ "%");
+      })
+      .bind("uploadComplete", function(event, file){
+        $(".progress", this).text("Upload complete");
+
+        // Change this callback function to suit your needs
+         // $.ajax({
+         //   type: "POST",
+         //   url: "/upload.php",
+         //   data: "name=" + file.name,
+         //   async: false,
+         // });
+
+        // upload has completed, lets try the next one in the queue
+        $(this).swfupload("startUpload");
+      });
+    ');
+    
     $this->addOption('script.js', '
       <script type="text/javascript">
       $(function(){
           $("#{widget_id}").swfupload({settings.js}) 
-            .bind("fileQueued", function(event, file){
-              $(this).swfupload("startUpload");
-            })
-            .bind("fileQueueError", function(event, file, errorCode, message){
-              alert("File queue error:\n"+message);
-            })
-            .bind("uploadProgress", function(event, file, bytesLoaded){
-              $(".progress", this).text((Math.floor((bytesLoaded / file.size) * 1000) / 10 )+ "%");
-            })
-            .bind("uploadComplete", function(event, file){
-              $(".progress", this).text("Upload complete");
-
-              // Change this callback function to suit your needs
-               // $.ajax({
-               //   type: "POST",
-               //   url: "/upload.php",
-               //   data: "name=" + file.name,
-               //   async: false,
-               // });
-
-              // upload has completed, lets try the next one in the queue
-              $(this).swfupload("startUpload");
-            });
+          {events.js}
       });
-
-
       </script>
     ');
     
@@ -163,6 +142,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
 
     // Swap in the template contents and return the resulting HTML
     $template_vars['{settings.js}'] = strtr($this->getOption('settings.js'), $template_vars);
+    $template_vars['{events.js}'] = strtr($this->getOption('events.js'), $template_vars);
     $template_vars['{script.js}']   = strtr($this->getOption('script.js'), $template_vars);
     return strtr($this->getOption('template.html'), $template_vars);
   }
