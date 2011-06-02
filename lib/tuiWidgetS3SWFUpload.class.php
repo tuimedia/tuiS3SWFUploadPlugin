@@ -1,6 +1,6 @@
 <?php
 
-class tuiWidgetImageLibrary extends sfWidgetForm
+class tuiWidgetS3SWFUpload extends sfWidgetForm
 {
   
   public function __construct(array $options = array(), array $attributes = array())
@@ -22,7 +22,7 @@ class tuiWidgetImageLibrary extends sfWidgetForm
   {
     return array(
       'http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js',
-      '/tuiS3SWFUploadPlugin/js/swfupload.js',
+      '/tuiS3SWFUploadPlugin/swfupload/swfupload_fp10/swfupload.js',
       'http://cachedcommons.org/cache/jquery-swfupload/1.0.0/javascripts/jquery-swfupload-min.js',
     );
   }
@@ -44,7 +44,7 @@ class tuiWidgetImageLibrary extends sfWidgetForm
     
     $this->addOption('acl', 'private');
     $this->addOption('key', 'uploads/${filename}');
-    $this->addOption('button_image', '/tuiWidgetImageLibraryPlugin/images/XPButtonUploadText_61x22.png');
+    $this->addOption('button_image', '/tuiS3SWFUploadPlugin/images/XPButtonUploadText_61x22.png');
     $this->addOption('size_limit', '2 GB');
     $this->addOption('file_types', '*.*');
     $this->addOption('file_types_description', 'All files');
@@ -75,7 +75,7 @@ class tuiWidgetImageLibrary extends sfWidgetForm
           http_success : [ 200, 201, 204 ],
 
           // File Upload Settings
-          file_size_limit : {size_limit}
+          file_size_limit : {size_limit},
           file_types : {file_types},
           file_types_description : {file_types_description},
           file_upload_limit : {upload_limit},
@@ -89,7 +89,8 @@ class tuiWidgetImageLibrary extends sfWidgetForm
           button_height: {button_height},
 
           // Flash Settings
-          flash_url: "/tuiWidgetImageLibraryPlugin/swf/swfupload.swf",  
+          flash_url: "/tuiS3SWFUploadPlugin/swfupload/swfupload_fp10/swfupload.swf",
+          flash9_url: "/tuiS3SWFUploadPlugin/swfupload/swfupload_fp9/swfupload.swf",
           debug: {debug},
           post_params: {
             "AWSAccessKeyId": {aws_accesskey},
@@ -108,7 +109,7 @@ class tuiWidgetImageLibrary extends sfWidgetForm
     $this->addOption('script.js', '
       <script type="text/javascript">
       $(function(){
-          $("{widget_id}").swfupload({settings.js}) 
+          $("#{widget_id}").swfupload({settings.js}) 
             .bind("fileQueued", function(event, file){
               $(this).swfupload("startUpload");
             })
@@ -156,28 +157,27 @@ class tuiWidgetImageLibrary extends sfWidgetForm
     
     $template_vars = array(
       '{widget_id}'              => $id,
-      '{script.js}'              => $this->getOption('script.js'),
-      '{settings.js}'            => $this->getOption('settings.js'),
-      '{policy_signature}'       => $this->generateSignature(),
-      '{policy_encoded}'         => base64_encode(json_encode($this->getOption('policy'))),
+      '{policy_signature}'       => json_encode($this->generateSignature()),
+      '{policy_encoded}'         => json_encode(base64_encode(json_encode($this->getOption('policy')))),
       '{key}'                    => json_encode($this->getOption('key')),
       '{acl}'                    => json_encode($this->getOption('acl')),
       '{aws_accesskey}'          => json_encode($this->getOption('aws_accesskey')),
       '{debug}'                  => json_encode($this->getOption('debug')),
-      '{button_id}'              => json_encode($id.'_button'),
+      '{button_id}'              => json_encode('#'.$id.'_button'),
       '{button_image}'           => json_encode($this->getOption('button_image')),
+      '{button_width}'           => json_encode($this->getOption('button_width')),
+      '{button_height}'          => json_encode($this->getOption('button_height')),
       '{queue_limit}'            => json_encode($this->getOption('queue_limit')),
       '{upload_limit}'           => json_encode($this->getOption('upload_limit')),
       '{file_types_description}' => json_encode($this->getOption('file_types_description')),
       '{file_types}'             => json_encode($this->getOption('file_types')),
       '{size_limit}'             => json_encode($this->getOption('size_limit')),
-      '{bucket_url}'             => json_encode($this->getOption('bucket_url')),
+      '{bucket_url}'             => json_encode('http://'.$this->getOption('aws_bucket').'.s3.amazonaws.com/'),
     );
 
-
-
-    
     // Swap in the template contents and return the resulting HTML
+    $template_vars['{settings.js}'] = strtr($this->getOption('settings.js'), $template_vars);
+    $template_vars['{script.js}']   = strtr($this->getOption('script.js'), $template_vars);
     return strtr($this->getOption('template.html'), $template_vars);
   }
   
