@@ -63,7 +63,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
             "key": {key},
             "policy": {policy_encoded},
             "signature": {policy_signature},
-            "success_action_status" : "201"
+            "success_action_status" : "201",
             "x-amz-storage-class" : {rrs}
           }
 
@@ -140,7 +140,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
       '{file_types}'             => json_encode($this->getOption('file_types')),
       '{size_limit}'             => json_encode($this->getOption('size_limit')),
       '{bucket_url}'             => json_encode('http://'.$this->getOption('aws_bucket').'.s3.amazonaws.com/'),
-      '{rrs}'                    => json_encode($this->getOption('rrs') ? 'REDUCED_REDUNDANCY' : 'STANDARD');
+      '{rrs}'                    => json_encode($this->getOption('rrs') ? 'REDUCED_REDUNDANCY' : 'STANDARD'),
     );
 
     // Swap in the template contents and return the resulting HTML
