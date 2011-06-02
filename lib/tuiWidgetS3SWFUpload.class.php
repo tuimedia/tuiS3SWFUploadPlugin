@@ -1,4 +1,5 @@
 <?php
+sfContext::getInstance()->getConfiguration()->loadHelpers('Asset');
 
 class tuiWidgetS3SWFUpload extends sfWidgetForm
 {
@@ -22,7 +23,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
   {
     return array(
       'http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js',
-      '/tuiS3SWFUploadPlugin/swfupload/swfupload_fp10/swfupload.js',
+      image_path('/tuiS3SWFUploadPlugin/js/swfupload.js'),
       'http://cachedcommons.org/cache/jquery-swfupload/1.0.0/javascripts/jquery-swfupload-min.js',
     );
   }
@@ -52,20 +53,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
     $this->addOption('button_height', 22);
     $this->addOption('debug', false);
     $this->addOption('upload_limit', 1);
-    $this->addOption('queue_limit', 0);
-
-    $this->addOption('policy', array(
-      'expiration' => date_create('now +1 month')->format('Y-m-d\T00:00:00\Z'),
-      'conditions' => array(
-        array('bucket' => $this->getOption('aws_bucket')),
-        array('starts-with', '$key', substr($this->getOption('key'), 0, strpos($this->getOption('key'), '/'))),
-        array('acl' => $this->getOption('acl')),
-        array('success_action_status' => "201"),
-        array('starts-with', '$Filename', ''),
-        array('content-length-range', 0, $this->convertFileSize($this->getOption('size_limit'))),
-      )
-    ));
-    
+    $this->addOption('queue_limit', 1);
 
 
     $this->addOption('settings.js', '
@@ -89,8 +77,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
           button_height: {button_height},
 
           // Flash Settings
-          flash_url: "/tuiS3SWFUploadPlugin/swfupload/swfupload_fp10/swfupload.swf",
-          flash9_url: "/tuiS3SWFUploadPlugin/swfupload/swfupload_fp9/swfupload.swf",
+          flash_url: "/tuiS3SWFUploadPlugin/swf/swfupload.swf",
           debug: {debug},
           post_params: {
             "AWSAccessKeyId": {aws_accesskey},
@@ -141,7 +128,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
     
     $this->addOption('template.html', '
       <div id="{widget_id}" class="swfupload-control">
-        <div id="{widget_id}_button">Upload</div>
+        <div id="{widget_id}-button">Upload</div>
         <div class="progress"></div>
       </div>
       {script.js}
@@ -154,17 +141,16 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
   {
     
     $id = $this->generateId($name);
-    
     $template_vars = array(
       '{widget_id}'              => $id,
       '{policy_signature}'       => json_encode($this->generateSignature()),
-      '{policy_encoded}'         => json_encode(base64_encode(json_encode($this->getOption('policy')))),
+      '{policy_encoded}'         => json_encode(base64_encode(json_encode($this->getPolicy()))),
       '{key}'                    => json_encode($this->getOption('key')),
       '{acl}'                    => json_encode($this->getOption('acl')),
       '{aws_accesskey}'          => json_encode($this->getOption('aws_accesskey')),
       '{debug}'                  => json_encode($this->getOption('debug')),
-      '{button_id}'              => json_encode('#'.$id.'_button'),
-      '{button_image}'           => json_encode($this->getOption('button_image')),
+      '{button_id}'              => json_encode($id.'-button'),
+      '{button_image}'           => json_encode(image_path($this->getOption('button_image'))),
       '{button_width}'           => json_encode($this->getOption('button_width')),
       '{button_height}'          => json_encode($this->getOption('button_height')),
       '{queue_limit}'            => json_encode($this->getOption('queue_limit')),
@@ -184,7 +170,7 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
   
   public function generateSignature()
   {
-    return base64_encode(hash_hmac('sha1', base64_encode(json_encode($this->getOption('policy'))), $this->getOption('aws_secret'), true));
+    return base64_encode(hash_hmac('sha1', base64_encode(json_encode($this->getPolicy())), $this->getOption('aws_secret'), true));
   }
   
   
@@ -222,6 +208,19 @@ class tuiWidgetS3SWFUpload extends sfWidgetForm
   }
 
 
-  
+  public function getPolicy()
+  {
+    return array(
+      'expiration' => date_create('now +1 month')->format('Y-m-d\T00:00:00\Z'),
+      'conditions' => array(
+        array('bucket' => $this->getOption('aws_bucket')),
+        array('starts-with', '$key', substr($this->getOption('key'), 0, strpos($this->getOption('key'), '/'))),
+        array('acl' => $this->getOption('acl')),
+        array('success_action_status' => "201"),
+        array('starts-with', '$Filename', ''),
+        array('content-length-range', 0, $this->convertFileSize($this->getOption('size_limit'))),
+      )
+    );
+  }
 
 }
