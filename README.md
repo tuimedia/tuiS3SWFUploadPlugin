@@ -1,13 +1,23 @@
 tuiS3SWFUploadPlugin
 ====================
 
-A simple Symfony 1.4 form widget for embedding a SWFUpload button that uploads
-to an Amazon S3 bucket. The widget handles generating the S3 policy and
-setting up the correct parameters, with reasonable defaults.
+This widget extends sfWidgetFormInputSWFUploadPlugin (which you'll need to 
+install yourself) and makes necessary changes to allow the widget to upload
+to Amazon S3. It handles generating the S3 policy and signature, overrides 
+a few of the sfWidgetFormInputSWFUploadPlugin defaults, and disables the 
+swfupload.cookie.js plugin, which is a common cause of upload issues. 
+Finally, it uses an updated SWFUpload.js version, 2.5beta4.
 
-Read the tuiWidgetS3SWFUpload class to see the available options. By default,
-files are uploaded to your bucket in an "uploads/" folder, and are private.
-There is no restriction on file type, and a 2Gb file size restriction.
+The configuration and use is the same as sfWidgetFormInputSWFUploadPlugin, 
+with only a few additional options:
+
+`aws_accesskey`: (string)Your Amazon AWS access key
+`aws_secret`: (string) Your Amazon AWS secret key
+`aws_bucket`: (string) The bucket name to upload to
+`rrs`: (boolean, default false) Whether to use Reduced Redundancy Storage
+`key`: (string, default `uploads/${filename}`) The location to upload to - `${filename}` is replaced with the uploaded file's original name by Amazon S3.
+`acl`: (string, default `private`) The ACL to set on the uploaded file
+
 
 Disclaimer
 ----------
@@ -19,11 +29,14 @@ useful, but we make no guarantees.
 Installation
 ------------
 
-1. Download the package and put it into your project's plugins folder, e.g.
+1. Download and install [sfWidgetFormInputSWFUploadPlugin][]
+2. Download this package and put it into your project's plugins folder, e.g.
 	`plugins/tuiS3SWFUploadPlugin` 
-2. Add `tuiS3SWFUploadPlugin` to your enabled plugins in the 
+3. Add `tuiS3SWFUploadPlugin` to your enabled plugins in the 
 	ProjectConfiguration class 
-3. Publish the plugin assets: `./symfony plugin:publish-assets`
+4. Publish the plugin assets: `./symfony plugin:publish-assets`
+
+[sfWidgetFormInputSWFUploadPlugin]: http://www.symfony-project.org/plugins/sfWidgetFormInputSWFUploadPlugin
 
 
 Example usage
@@ -52,26 +65,10 @@ class TestForm extends BaseForm
 ?>
 ```
 
-Tips
-----
-
-* You can override the default events by setting the `events.js` option when
-  you declare the widget in your form class. One reason you might want to do
-  this is to bind an action to the `uploadComplete` event to inform your
-  Symfony app that a file has been successfully uploaded (or set a hidden
-  input in your form).
-
 
 Known issues
 ------------
 
-* Pretty sloppy code
-* No tests
-* Lots of config options, but really only designed to work with a single file 
-	upload.
-* Requires and includes jQuery and the jquery-swfupload plugin. Should be   
-	optional, but isn't. (Well, it's sort of optional - if you don't call 
-	`use_javascripts_for_form($form)` in your template.)
 * In case you aren't familiar with SWFUpload, it doesn't integrate with your 
 	actual form at all. That's why the example sets a "pass" validator on the 
 	widget.
